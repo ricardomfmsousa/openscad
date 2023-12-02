@@ -44,17 +44,20 @@ module strut_id_letters(strut_sockets, circle_angle) {
     }
   }
 }
-// TODO: fix
+
 module screw_holes(strut_sockets, circle_angle) {
   strut_count = len(strut_sockets);
   min_angle = min(get_strut_angles());
   for (i = [0:strut_count - 1]) {
     strut_angle = get_strut_angle(strut_sockets[i]);
     for (mult = [2.5:1:3.5]) {
+      screw_hole_start = sin(min_angle) * hub_diameter / 2 - hub_min_thikness;
       rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ])
           translate([
-            0, hub_diameter / mult, -strut_diameter / 2 + hub_min_thikness * 1.5
-          ]) rotate([180]) cylinder(h = hub_min_thikness * strut_diameter,
+            0, hub_diameter / mult,
+            screw_hole_start
+
+          ]) rotate([180]) cylinder(h = screw_hole_start + strut_diameter,
                                     d = screw_holde_diameter, center = false);
     }
   }
