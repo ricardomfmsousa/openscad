@@ -6,9 +6,15 @@ DEBUG = true;
 $fn = 6;
 render = "all"; // [all, hex, penth, quad_left, quad_right]
 strut_diameter = 20;
-hub_min_thikness = 4;
+hub_min_thikness = 3;
 screw_holde_diameter = 3;
 strut_angles = [ [ "A", 10.04 ], [ "B", 11.64 ], [ "C", 11.90 ] ];
+// strut_angles_1V = [ [ "A", 10.72 ], [ "B", 11.64 ], [ "C", 11.90 ] ];
+// strut_angles_2V = [ [ "A", 10.72 ], [ "B", 11.64 ], [ "C", 11.90 ] ];
+// strut_angles_3V = [ [ "A", 10.72 ], [ "B", 11.64 ], [ "C", 11.90 ] ];
+// strut_angles_4V = [ [ "A", 10.72 ], [ "B", 11.64 ], [ "C", 11.90 ] ];
+// strut_angles_5V = [ [ "A", 10.72 ], [ "B", 11.64 ], [ "C", 11.90 ] ];
+// strut_angles_6V = [ [ "A", 10.72 ], [ "B", 11.64 ], [ "C", 11.90 ] ];
 
 font_size = (strut_diameter + hub_min_thikness) / 1.5;
 hub_diameter = strut_diameter * 5;
@@ -18,9 +24,9 @@ if (render == "all" || render == "hex")
 if (render == "all" || render == "penth")
   translate([ hub_diameter * 2, 0, 0 ]) penth_hub(DEBUG ? undef : "orange");
 if (render == "all" || render == "quad_left")
-  translate([ hub_diameter * 4, 0, 0 ]) quad_hub_left(DEBUG ? undef : "green");
+  translate([ 0, hub_diameter * 2, 0 ]) quad_hub_left(DEBUG ? undef : "green");
 if (render == "all" || render == "quad_right")
-  translate([ hub_diameter * 6, 0, 0 ])
+  translate([ hub_diameter * 2, hub_diameter * 2, 0 ])
       quad_hub_right(DEBUG ? undef : "purple");
 
 // Returns all the strut angles in an array
@@ -32,11 +38,11 @@ function get_strut_angle(strut_id) =
 
 module strut_id_letters(strut_sockets, circle_angle) {
   strut_count = len(strut_sockets);
-  min_angle = min(get_strut_angles());
+  max_angle = max(get_strut_angles());
   for (i = [0:strut_count - 1]) {
     strut_angle = get_strut_angle(strut_sockets[i]);
-    rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ])
-        translate([ 0, hub_diameter / 3.5, strut_diameter / 3 ]) rotate(180)
+    rotate([ -max_angle, 0, 180 + i * circle_angle / strut_count ])
+        translate([ 0, hub_diameter / 3.6, strut_diameter / 3 ]) rotate(180)
             linear_extrude(1.5 + strut_diameter / 2 + hub_min_thikness / 2) {
       text(strut_sockets[i], size = font_size,
            font = "DejaVu Sans Mono:style=Bold", valign = "center",
@@ -47,15 +53,16 @@ module strut_id_letters(strut_sockets, circle_angle) {
 
 module screw_holes(strut_sockets, circle_angle) {
   strut_count = len(strut_sockets);
-  min_angle = min(get_strut_angles());
+  max_angle = max(get_strut_angles());
   for (i = [0:strut_count - 1]) {
     strut_angle = get_strut_angle(strut_sockets[i]);
     for (mult = [2.5:1:3.5]) {
-      screw_hole_start = sin(min_angle) * hub_diameter / 2 - hub_min_thikness;
-      rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ])
-          translate([ 0, hub_diameter / mult, screw_hole_start ]) rotate([180])
-              cylinder(h = screw_hole_start + strut_diameter,
-                       d = screw_holde_diameter, center = false);
+      screw_hole_start =
+          -cos(max_angle) * strut_diameter * 2 + hub_min_thikness;
+      rotate([ -max_angle, 0, 180 + i * circle_angle / strut_count ])
+          translate([ 0, hub_diameter / mult, screw_hole_start ]) cylinder(
+              h = cos(max_angle) * strut_diameter * 2 + hub_min_thikness * 2,
+              d = screw_holde_diameter, center = false);
     }
   }
 }
@@ -91,8 +98,7 @@ module peripheral_socket(strut_sockets, circle_angle,
 
 module center_socket() {
   max_angle = max(get_strut_angles());
-  center_socket_height = sin(max_angle) * hub_diameter / 2 +
-                         2 * (hub_min_thikness + strut_diameter);
+  center_socket_height = cos(max_angle) * hub_diameter * 2;
   cylinder(h = center_socket_height, d = strut_diameter, center = true);
 }
 
