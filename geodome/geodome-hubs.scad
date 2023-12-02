@@ -53,12 +53,9 @@ module screw_holes(strut_sockets, circle_angle) {
     for (mult = [2.5:1:3.5]) {
       screw_hole_start = sin(min_angle) * hub_diameter / 2 - hub_min_thikness;
       rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ])
-          translate([
-            0, hub_diameter / mult,
-            screw_hole_start
-
-          ]) rotate([180]) cylinder(h = screw_hole_start + strut_diameter,
-                                    d = screw_holde_diameter, center = false);
+          translate([ 0, hub_diameter / mult, screw_hole_start ]) rotate([180])
+              cylinder(h = screw_hole_start + strut_diameter,
+                       d = screw_holde_diameter, center = false);
     }
   }
 }
@@ -93,8 +90,10 @@ module peripheral_socket(strut_sockets, circle_angle,
 }
 
 module center_socket() {
-  cylinder(h = 4 * (strut_diameter + hub_min_thikness), d = strut_diameter,
-           center = true);
+  max_angle = max(get_strut_angles());
+  center_socket_height = sin(max_angle) * hub_diameter / 2 +
+                         2 * (hub_min_thikness + strut_diameter);
+  cylinder(h = center_socket_height, d = strut_diameter, center = true);
 }
 
 module hub(strut_sockets, circle_angle) {
