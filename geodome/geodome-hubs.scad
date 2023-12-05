@@ -34,7 +34,7 @@ function get_strut_angle(frequecy_angles, strut_id) =
     frequecy_angles[search(strut_id, frequecy_angles)[0]][1];
 
 // Returns the max circumference angle (in degrees) for a hub socket config
-function get_circle_angle(socket_config) = len(socket_config) > 4 ? 360 : 240;
+function get_circle_angle(socket_config) = len(socket_config) > 4 ? 360 : 288;
 
 // Renders the strut_id letter on the top of the hub
 module strut_id_letters(frequency_angles, socket_config) {
@@ -112,7 +112,7 @@ module center_socket(frequency_angles) {
   cylinder(h = center_socket_height, d = strut_diameter, center = true);
 }
 
-// Fully renders the hub both in debugging and production modes
+// Fully renders the hub both in debugging or production modes
 module hub(frequency_angles, socket_config) {
   if (DEBUG) {
     % color([ 0, 0, 1, 0.5 ])
