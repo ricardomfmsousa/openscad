@@ -33,13 +33,22 @@ function get_strut_angles(frequecy_angles) = [for (a = frequecy_angles) a[1]];
 function get_strut_angle(frequecy_angles, strut_id) =
     frequecy_angles[search(strut_id, frequecy_angles)[0]][1];
 
-// Returns the max circumference angle (in degrees) for a hub socket config
-function get_circle_angle(socket_config) = len(socket_config) > 4 ? 360 : 288;
+// Returns the max circumference angle (in degrees) for a dome_frequency and a
+// hub socket config
+function get_circle_angle(frequency_angles, socket_config) =
+    let(isFrequency1V = frequency_angles == freq_1V_strut_angles) //
+            let(full_circumference = 360)                         //
+            let(quad_1V_circumference = 288)                      // 360-360/5
+            let(quad_general_circumference = 240)                 // 360-360/6
+            len(socket_config) > 4
+        ? full_circumference
+    : isFrequency1V ? quad_1V_circumference
+                    : quad_general_circumference;
 
 // Renders the strut_id letter on the top of the hub
 module strut_id_letters(frequency_angles, socket_config) {
   strut_count = len(socket_config);
-  circle_angle = get_circle_angle(socket_config);
+  circle_angle = get_circle_angle(frequency_angles, socket_config);
   max_angle = max(get_strut_angles(frequency_angles));
   for (i = [0:strut_count - 1]) {
     strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
@@ -56,7 +65,7 @@ module strut_id_letters(frequency_angles, socket_config) {
 // Renders the screw holes on the bottom of the hub
 module screw_holes(frequency_angles, socket_config) {
   strut_count = len(socket_config);
-  circle_angle = get_circle_angle(socket_config);
+  circle_angle = get_circle_angle(frequency_angles, socket_config);
   max_angle = max(get_strut_angles(frequency_angles));
   for (i = [0:strut_count - 1]) {
     strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
@@ -79,7 +88,7 @@ module letter_body_intersection(frequency_angles, socket_config) {
 // Renders the main body of the hub
 module body(frequency_angles, socket_config) {
   strut_count = len(socket_config);
-  circle_angle = get_circle_angle(socket_config);
+  circle_angle = get_circle_angle(frequency_angles, socket_config);
   hull() for (i = [0:strut_count - 1]) {
     for (strut_socket = socket_config) {
       // Hull between all angle variations for a regular hub top and base
@@ -95,7 +104,7 @@ module body(frequency_angles, socket_config) {
 module peripheral_socket(frequency_angles, socket_config,
                          hub_min_thikness = hub_min_thikness) {
   strut_count = len(socket_config);
-  circle_angle = get_circle_angle(socket_config);
+  circle_angle = get_circle_angle(frequency_angles, socket_config);
   for (i = [0:strut_count - 1]) {
     strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
     rotate([ 90 + strut_angle, 0, i * circle_angle / strut_count ])
@@ -154,7 +163,6 @@ module hubs_1V() {
     }
 }
 
-// TODO: TO TEST
 // http://www.domerama.com/calculators/2v-geodesic-dome-calculator/
 // A x30
 // B x35
