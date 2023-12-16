@@ -2,7 +2,7 @@
 
 DEBUG = false;
 
-$fn = 6;
+$fn = 8;
 dome_frequency = "1V";  // [1V, 2V, 3V3/8, 5V Mexican]
 hub_body_type = "pipe"; // [pipe, solid]
 hub_min_thikness = 2;
@@ -43,8 +43,6 @@ function get_strut_angle(frequecy_angles, strut_id) =
 function get_socket_config_angles(frequency_angles, socket_config) = [for (
     strut_id = socket_config) get_strut_angle(frequency_angles, strut_id)];
 
-echo(get_socket_config_angles(freq_5V_mexican_strut_angles, [ "A", "B" ]));
-
 // Returns the max circumference angle (in degrees) given it's
 // full_hub_sector_count and strut_count
 function get_circle_angle(full_hub_sector_count, strut_count) =
@@ -69,16 +67,20 @@ module strut_id_letters(frequency_angles, socket_config,
                         full_hub_sector_count) {
   strut_count = len(socket_config);
   circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
-  max_angle = max(get_strut_angles(frequency_angles));
-  for (i = [0:strut_count - 1]) {
-    strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
-    rotate([ -max_angle, 0, 180 + i * circle_angle / strut_count ])
-        translate([ 0, hub_diameter / 3.6, strut_diameter / 3 ]) rotate(180)
-            linear_extrude(1.5 + strut_diameter / 2 + hub_min_thikness / 2) {
-      text(socket_config[i], size = font_size,
-           font = "DejaVu Sans Mono:style=Bold", valign = "center",
-           halign = "center");
+  min_angle = min(get_strut_angles(frequency_angles));
+  difference() {
+    for (i = [0:strut_count - 1]) {
+      strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
+      rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ])
+          translate([ 0, hub_radius / 2.5, strut_diameter / 2 ]) rotate(180)
+              linear_extrude(hub_min_thikness * 2) {
+        text(socket_config[i], size = font_size,
+             font = "DejaVu Sans Mono:style=Bold", valign = "center",
+             halign = "center");
+      }
     }
+    translate([ 0, 0, -hub_min_thikness / 2 ])
+        body(frequency_angles, socket_config, full_hub_sector_count);
   }
 }
 
@@ -86,32 +88,23 @@ module strut_id_letters(frequency_angles, socket_config,
 module screw_holes(frequency_angles, socket_config, full_hub_sector_count) {
   strut_count = len(socket_config);
   circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
-  max_angle = max(get_strut_angles(frequency_angles));
+  min_angle = min(get_strut_angles(frequency_angles));
   for (i = [0:strut_count - 1]) {
     strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
     for (mult = [2.7:1:2.7]) { // Tweak for multiple screws
-      screw_hole_start =
-          -cos(max_angle) * strut_diameter * 2 + hub_min_thikness;
-      rotate([ -max_angle, 0, 180 + i * circle_angle / strut_count ])
+      screw_hole_start = (mult + hub_min_thikness) * sin(min_angle);
+      rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ])
           translate([ 0, hub_diameter / mult, screw_hole_start ]) cylinder(
-              h = 1.9 * cos(max_angle) * (strut_diameter + hub_min_thikness),
-              d = screw_holde_diameter, center = false);
+              h = strut_diameter, d = screw_holde_diameter, center = false);
     }
   }
 }
 
-// Renders a z-axis translated hub body copy to intersect with the strut_id
-module letter_body_intersection(frequency_angles, socket_config,
-                                full_hub_sector_count) {
-  translate([ 0, 0, 1 ])
-      body(frequency_angles, socket_config, full_hub_sector_count);
-}
-
 // Renders the main body of the hub
 module body(frequency_angles, socket_config, full_hub_sector_count) {
-  strut_count = len(socket_config);
-  circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
   module rotate_cylinder() {
+    strut_count = len(socket_config);
+    circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
     for (i = [0:strut_count - 1]) {
       // Hull between all angle variations for a regular hub top and base
       hull() for (strut_socket = socket_config) {
@@ -147,38 +140,51 @@ module peripheral_socket(frequency_angles, socket_config, hub_min_thikness,
 }
 
 // Renders a center strut socket
-module center_socket(frequency_angles, socket_config) {
-  min_angle = min(get_strut_angles(frequency_angles));
+module center_socket(frequency_angles, socket_config,
+                     diameter = strut_diameter) {
   max_angle = max(get_socket_config_angles(frequency_angles, socket_config));
   outer_radius = strut_radius + hub_min_thikness;
-  center_socket_height = outer_radius * (cos(max_angle) + sin(max_angle)) +
-                         outer_radius * cos(min_angle) +
-                         hub_radius * sin(min_angle);
+  origin_offset = outer_radius * cos(max_angle) + hub_radius * sin(max_angle);
   offset = outer_radius * cos((max_angle));
-  translate([ 0, 0, offset - center_socket_height ])
-      cylinder(h = center_socket_height + hub_min_thikness, d = strut_diameter,
-               center = false);
+  center_socket_height = origin_offset + offset + hub_min_thikness / 4;
+  translate([ 0, 0, -origin_offset ])
+      cylinder(h = center_socket_height, d = diameter, center = false);
 }
 
 module center_reinforcement(frequency_angles, socket_config) {
-  min_angle = min(get_strut_angles(frequency_angles));
-  max_angle = max(get_socket_config_angles(frequency_angles, socket_config));
-  outer_radius = strut_radius + hub_min_thikness;
-  center_socket_height = outer_radius * (cos(max_angle) + sin(max_angle)) +
-                         outer_radius * cos(min_angle) +
-                         hub_radius * sin(min_angle);
-  offset = outer_radius * cos((max_angle));
-  translate([ 0, 0, offset - center_socket_height + hub_min_thikness ])
-      cylinder(h = center_socket_height - hub_min_thikness,
-               d = strut_diameter + hub_min_thikness * 2, center = false);
+  center_socket(frequency_angles, socket_config,
+                strut_diameter + hub_min_thikness * 2);
 }
 
-module top_cut(frequency_angles) {
-  min_angle = min(get_strut_angles(frequency_angles));
-  diameter = hub_diameter;
-  height = hub_min_thikness + strut_radius;
-  // translate([ 0, 0, cos(min_angle) ])
-  //     cylinder(height * 2, strut_radius, strut_radius * 2, center = false);
+module bottom_support(frequency_angles, socket_config, full_hub_sector_count) {
+  strut_count = len(socket_config);
+  circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
+  min_angle = min(get_socket_config_angles(frequency_angles, socket_config));
+  outer_radius = strut_radius + hub_min_thikness;
+  origin_offset = outer_radius * cos(min_angle) + hub_radius * sin(min_angle);
+  for (i = [0:strut_count - 1]) {
+    // Hull between all angle variations for a regular hub top and base
+    for (strut_socket = socket_config) {
+      strut_angle = get_strut_angle(frequency_angles, strut_socket);
+      rotate([ 0, 0, 270 + i * circle_angle / strut_count ])
+          translate([ 0, -hub_min_thikness / 2, -origin_offset ]) hull() {
+        cube([
+          hub_radius * cos(min_angle) -
+              sin(min_angle) * (strut_radius + hub_min_thikness) -
+              hub_min_thikness / 2,
+          hub_min_thikness, strut_radius * 2
+        ]);
+        // rotate([ 90, 0, 0 ])
+        //     translate([ 0, 6, -(strut_radius + hub_min_thikness) / 2 ])
+        //     cube([
+        //       hub_radius * cos(min_angle) -
+        //           sin(min_angle) * (strut_radius + hub_min_thikness),
+        //       origin_offset / 4,
+        //       strut_radius
+        //     ]);
+      };
+    }
+  }
 }
 
 // Fully renders the hub both in debugging or production modes
@@ -186,8 +192,6 @@ module hub(frequency_angles, socket_config, full_hub_sector_count = undef) {
   // Align the hub base with the origin
   translate_to_origin(frequency_angles, socket_config) {
     if (DEBUG) {
-      % color([ 0, 0, 1, 0.5 ]) letter_body_intersection(
-            frequency_angles, socket_config, full_hub_sector_count);
       color("grey")
           screw_holes(frequency_angles, socket_config, full_hub_sector_count);
       color([ 0.5, 0.1, 0.5, 0.5 ])
@@ -198,21 +202,19 @@ module hub(frequency_angles, socket_config, full_hub_sector_count = undef) {
                                     full_hub_sector_count);
       color([ 1, 1, 0, 0.7 ])
           body(frequency_angles, socket_config, full_hub_sector_count);
-      color([ 0, 1, 0, 0.7 ]) top_cut(frequency_angles);
-      // center_reinforcement(frequency_angles, socket_config);
+      color([ 0, 1, 0, 0.7 ]) bottom_support(frequency_angles, socket_config,
+                                             full_hub_sector_count);
+      color("cyan", 0.5) center_reinforcement(frequency_angles, socket_config);
     } else {
       difference() {
         union() {
           body(frequency_angles, socket_config, full_hub_sector_count);
-          intersection() {
-            letter_body_intersection(frequency_angles, socket_config,
-                                     full_hub_sector_count);
-            strut_id_letters(frequency_angles, socket_config,
-                             full_hub_sector_count);
-          }
-          // center_reinforcement(frequency_angles, socket_config);
+          center_reinforcement(frequency_angles, socket_config);
+          bottom_support(frequency_angles, socket_config,
+                         full_hub_sector_count);
         }
-        top_cut(frequency_angles);
+        strut_id_letters(frequency_angles, socket_config,
+                         full_hub_sector_count);
         peripheral_socket(frequency_angles, socket_config, hub_min_thikness,
                           full_hub_sector_count);
         center_socket(frequency_angles, socket_config);
