@@ -5,9 +5,10 @@ DEBUG = false;
 $fn = 8;
 dome_frequency = "1V";  // [1V, 2V, 3V3/8, 5V Mexican]
 hub_body_type = "pipe"; // [pipe, solid]
-hub_min_thikness = 2;
-strut_diameter = 16.05;
+hub_min_thikness = 2.5;
+strut_diameter = 25.05;
 screw_holde_diameter = 3;
+strut_edge_geometry = 4;
 
 /* [Hidden] */
 font_size = (strut_diameter + hub_min_thikness) / 1.5;
@@ -15,6 +16,7 @@ hub_diameter = strut_diameter * 5;
 hub_radius = hub_diameter / 2;
 strut_radius = strut_diameter / 2;
 render_all_spacing = strut_diameter * 8;
+strut_hub_center_offset = 9 * strut_diameter / 10;
 // Strut socket angles
 freq_1V_strut_angles = [[ "A", 31.72 ]];
 freq_2V_strut_angles = [ [ "A", 15.86 ], [ "B", 18 ] ];
@@ -100,6 +102,17 @@ module screw_holes(frequency_angles, socket_config, full_hub_sector_count) {
   }
 }
 
+module layout_struts(frequency_angles, socket_config, hub_min_thikness,
+                     full_hub_sector_count) {
+  strut_count = len(socket_config);
+  circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
+  for ($i = [0:strut_count - 1]) {
+    $strut_angle = get_strut_angle(frequency_angles, socket_config[$i]);
+    rotate([ 90 + $strut_angle, 0, $i * circle_angle / strut_count ])
+        translate([ 0, 0, strut_hub_center_offset ]) children();
+  }
+}
+
 // Renders the main body of the hub
 module body(frequency_angles, socket_config, full_hub_sector_count) {
   module rotate_cylinder() {
@@ -110,8 +123,9 @@ module body(frequency_angles, socket_config, full_hub_sector_count) {
       hull() for (strut_socket = socket_config) {
         strut_angle = get_strut_angle(frequency_angles, strut_socket);
         rotate([ 90 + strut_angle, 0, i * circle_angle / strut_count ])
+            // rotate([ 0, 0, 45 ])
             cylinder(h = hub_radius, d = strut_diameter + hub_min_thikness * 2,
-                     center = false);
+                     center = false, $fn = strut_edge_geometry);
       }
     }
   }
@@ -125,18 +139,14 @@ module body(frequency_angles, socket_config, full_hub_sector_count) {
 // Renders all the peripheral strut sockets
 module peripheral_socket(frequency_angles, socket_config, hub_min_thikness,
                          full_hub_sector_count) {
-  strut_count = len(socket_config);
   min_angle = min(get_strut_angles(frequency_angles));
-  circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
-  strut_hub_center_offset = 9 * strut_diameter / 10;
   strut_hub_depth =
       hub_radius - strut_hub_center_offset + hub_min_thikness * cos(min_angle);
-  for (i = [0:strut_count - 1]) {
-    strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
-    rotate([ 90 + strut_angle, 0, i * circle_angle / strut_count ])
-        translate([ 0, 0, strut_hub_center_offset ])
-            cylinder(h = strut_hub_depth, d = strut_diameter, center = false);
-  }
+  layout_struts(frequency_angles, socket_config, hub_min_thikness,
+                full_hub_sector_count)
+      //rotate([ 0, 0, 45 ])
+      cylinder(h = strut_hub_depth, d = strut_diameter, center = false,
+               $fn = strut_edge_geometry);
 }
 
 // Renders a center strut socket
@@ -159,30 +169,18 @@ module center_reinforcement(frequency_angles, socket_config) {
 module bottom_support(frequency_angles, socket_config, full_hub_sector_count) {
   strut_count = len(socket_config);
   circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
-  min_angle = min(get_socket_config_angles(frequency_angles, socket_config));
+  max_angle = max(get_socket_config_angles(frequency_angles, socket_config));
   outer_radius = strut_radius + hub_min_thikness;
-  origin_offset = outer_radius * cos(min_angle) + hub_radius * sin(min_angle);
+  origin_offset = outer_radius * cos(max_angle) + hub_radius * sin(max_angle);
   for (i = [0:strut_count - 1]) {
-    // Hull between all angle variations for a regular hub top and base
-    for (strut_socket = socket_config) {
-      strut_angle = get_strut_angle(frequency_angles, strut_socket);
-      rotate([ 0, 0, 270 + i * circle_angle / strut_count ])
-          translate([ 0, -hub_min_thikness / 2, -origin_offset ]) hull() {
-        cube([
-          hub_radius * cos(min_angle) -
-              sin(min_angle) * (strut_radius + hub_min_thikness) -
-              hub_min_thikness / 2,
-          hub_min_thikness, strut_radius * 2
-        ]);
-        // rotate([ 90, 0, 0 ])
-        //     translate([ 0, 6, -(strut_radius + hub_min_thikness) / 2 ])
-        //     cube([
-        //       hub_radius * cos(min_angle) -
-        //           sin(min_angle) * (strut_radius + hub_min_thikness),
-        //       origin_offset / 4,
-        //       strut_radius
-        //     ]);
-      };
+    rotate([ 0, 0, 270 + i * circle_angle / strut_count ])
+        translate([ 0, -hub_min_thikness / 2, -origin_offset ]) {
+      cube([
+        hub_radius * cos(max_angle) -
+            sin(max_angle) * (strut_radius + hub_min_thikness) -
+            hub_min_thikness / 2 + sin(max_angle),
+        hub_min_thikness, strut_radius * 2
+      ]);
     }
   }
 }
