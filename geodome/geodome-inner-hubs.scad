@@ -6,7 +6,7 @@ $fn = 10;
 dome_frequency = "1V";  // [1V, 2V, 3V3/8, 5V Mexican]
 hub_body_type = "pipe"; // [pipe, solid]
 strut_thikness = 1.5;
-strut_inner_diameter = 21;
+strut_inner_diameter = 14.1; //[::float]
 screw_holde_diameter = 4;
 strut_edge_geometry = 4;
 
@@ -71,15 +71,16 @@ module strut_id_letters(frequency_angles, socket_config,
   circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
   min_angle = min(get_strut_angles(frequency_angles));
 
-    for (i = [0:strut_count - 1]) {
-      strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
-      rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ])
-          translate([ 0, (2*strut_thikness + hub_radius) / 2.8, -strut_radius - strut_thikness/2  ]) rotate([180, 0, 0])
-              linear_extrude(strut_thikness * 2) {
-        text(socket_config[i], size = font_size,
-             font = "DejaVu Sans Mono:style=Bold", valign = "center",
-             halign = "center");
-      }
+  for (i = [0:strut_count - 1]) {
+    strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
+    rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ]) translate([
+      0, (2 * strut_thikness + hub_radius) / 2.8,
+      -strut_radius - strut_thikness / 2
+    ]) rotate([ 180, 0, 0 ]) linear_extrude(strut_thikness * 2) {
+      text(socket_config[i], size = font_size,
+           font = "DejaVu Sans Mono:style=Bold", valign = "center",
+           halign = "center");
+    }
   }
 }
 
@@ -92,9 +93,10 @@ module screw_holes(frequency_angles, socket_config, full_hub_sector_count) {
     strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
     for (mult = [2.7:1:2.7]) { // Tweak for multiple screws
       screw_hole_start = -(hub_diameter / mult) * cos(min_angle);
-      rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ])
-          translate([ 0, hub_diameter / mult + 2*strut_thikness, screw_hole_start ]) cylinder(
-              h = strut_inner_diameter * 3, d = screw_holde_diameter, center = false);
+      rotate([ -min_angle, 0, 180 + i * circle_angle / strut_count ]) translate(
+          [ 0, hub_diameter / mult + 2 * strut_thikness, screw_hole_start ])
+          cylinder(h = strut_inner_diameter * 3, d = screw_holde_diameter,
+                   center = false);
     }
   }
 }
@@ -112,25 +114,23 @@ module layout_struts(frequency_angles, socket_config, strut_thikness,
 
 // Renders the main body of the hub
 module body(frequency_angles, socket_config, full_hub_sector_count) {
-    strut_count = len(socket_config);
-    circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
-    for (i = [0:strut_count - 1]) {
-        strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
-        rotate([ 90 + strut_angle, 0, i * circle_angle / strut_count ])
-            cylinder(h = strut_thikness*2 + hub_radius /2, d = strut_inner_diameter + strut_thikness * 2,
-                     center = false, $fn = strut_edge_geometry);
-      
-    }
-  
-
+  strut_count = len(socket_config);
+  circle_angle = get_circle_angle(full_hub_sector_count, strut_count);
+  for (i = [0:strut_count - 1]) {
+    strut_angle = get_strut_angle(frequency_angles, socket_config[i]);
+    rotate([ 90 + strut_angle, 0, i * circle_angle / strut_count ])
+        cylinder(h = strut_thikness * 2 + hub_radius / 2,
+                 d = strut_inner_diameter + strut_thikness * 2, center = false,
+                 $fn = strut_edge_geometry);
+  }
 }
 
 // Renders all the peripheral strut sockets
 module peripheral_socket(frequency_angles, socket_config, strut_thikness,
                          full_hub_sector_count) {
   min_angle = min(get_strut_angles(frequency_angles));
-  strut_hub_depth =
-      hub_radius - strut_hub_center_offset * cos(min_angle) + 2*strut_thikness;
+  strut_hub_depth = hub_radius - strut_hub_center_offset * cos(min_angle) +
+                    2 * strut_thikness;
   layout_struts(frequency_angles, socket_config, strut_thikness,
                 full_hub_sector_count)
       cylinder(h = strut_hub_depth, d = strut_inner_diameter, center = false,
@@ -140,24 +140,21 @@ module peripheral_socket(frequency_angles, socket_config, strut_thikness,
 // Renders a center strut socket
 module center_socket(frequency_angles, socket_config,
                      diameter = strut_inner_diameter * 2) {
-                         max_angle = max(get_socket_config_angles(frequency_angles, socket_config));
+  max_angle = max(get_socket_config_angles(frequency_angles, socket_config));
   outer_radius = strut_radius + strut_thikness;
   origin_offset = outer_radius * cos(max_angle) + hub_radius * sin(max_angle);
-  offset = outer_radius * cos((max_angle)) - hub_radius /12;
+  offset = outer_radius * cos((max_angle)) - hub_radius / 12;
   center_socket_height = origin_offset + offset + strut_thikness / 4;
   translate([ 0, 0, offset ])
       cylinder(h = offset, d = diameter, center = false);
-
 }
 
 module center_reinforcement(frequency_angles, socket_config) {
-//  center_socket(frequency_angles, socket_config,
-//                strut_inner_diameter + strut_thikness * 2);
+  //  center_socket(frequency_angles, socket_config,
+  //                strut_inner_diameter + strut_thikness * 2);
 }
 
-module bottom_support(frequency_angles, socket_config, full_hub_sector_count) {
-
-}
+module bottom_support(frequency_angles, socket_config, full_hub_sector_count) {}
 
 // Fully renders the hub both in debugging or production modes
 module hub(frequency_angles, socket_config, full_hub_sector_count = undef) {
@@ -185,13 +182,12 @@ module hub(frequency_angles, socket_config, full_hub_sector_count = undef) {
           bottom_support(frequency_angles, socket_config,
                          full_hub_sector_count);
           peripheral_socket(frequency_angles, socket_config, strut_thikness,
-                         full_hub_sector_count);
+                            full_hub_sector_count);
         }
         strut_id_letters(frequency_angles, socket_config,
                          full_hub_sector_count);
         center_socket(frequency_angles, socket_config);
         screw_holes(frequency_angles, socket_config, full_hub_sector_count);
-               
       }
     }
   }
