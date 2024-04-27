@@ -16,6 +16,7 @@ fi
 # Assign input file and OpenSCAD file paths to variables
 input_file="$1"
 openscad_file="words_key_chain.scad"
+dist_folder="dist_j"
 
 # Check if input file exists
 if [ ! -f "$input_file" ]; then
@@ -30,7 +31,7 @@ if [ ! -f "$openscad_file" ]; then
 fi
 
 # Create dist folder if it doesn't exist
-mkdir -p dist
+mkdir -p "$dist_folder"
 
 # Loop through each line in the input file
 while IFS= read -r line; do
@@ -40,7 +41,7 @@ while IFS= read -r line; do
     echo -e "\e[1mGenerating STL for:\e[0m \e[1;32m$line\e[0m"
     
     # Generate STL using OpenSCAD and the current line as parameter
-    output_stl="dist/${line}.stl"
+    output_stl="${dist_folder}/${line}.stl"
     openscad -o "$output_stl" -D "first_word=\"${line}\"" "$openscad_file"
     
     # Check if the STL file was generated successfully
