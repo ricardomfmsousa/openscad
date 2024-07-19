@@ -11,14 +11,14 @@ function concat_points(arrays, result = [], i = 0) =
     i < len(arrays) ? concat_points(arrays, concat(result, arrays[i]), i + 1)
                     : [result][0];
 
-function poly_arc(x = 0, y = 0, r = 10, a1 = 0, a2 = 359, step = 1) =
+function poly_arc(x = 0, y = 0, r = 10, a1 = 0, a2 = 359, step = 20) =
     [for (a = [a1:step:a2])[x + r * cos(a), y + r *sin(a)]];
 
 points = [
-  [[ 25, 0 ]],                                      //
-  poly_arc(x = 0, y = 0, r = 20, a1 = 0, a2 = 180), //
-  [ [ -25, 0 ], [ -25, 30 ], [ 25, 30 ] ],          //
-
+  [[ 70, 0 ]],                                       //
+  poly_arc(x = 0, y = 0, r = 20, a1 = 0, a2 = 180),  //
+  poly_arc(x = 45, y = 0, r = 20, a1 = 0, a2 = 180), //
+  [ [ -25, 0 ], [ -25, 30 ], [ 70, 30 ] ],           //
 ];
 
 echo(concat_points(points));
