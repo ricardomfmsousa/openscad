@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<package format="1">
+  <name>GeoWB</name>
+  <description>Workbench for aid in geodesic dome planning</description>
+  <version>1.0.0</version>
+  <date>2024.07.19</date> <!-- YYYY.MM.DD of new release goes here -->
+  <maintainer email="ricardomfmsousa@gmail.com">RMFMS</maintainer>
+  <license file="LICENSE">LGPL-2.1</license>
+
+  <content>
+    <workbench>
+      <name>GeoWB</name>
+      <classname>GeoWB</classname>
+      <description>Workbench for aid in geodesic dome planning</description>
+      <version>1.0.0</version>
+      <subdirectory>./</subdirectory>
+      <icon>Icons/dome_icon.png</icon>
+      <freecadmin>0.21.0</freecadmin>
+      <tag>geodesic</tag>
+    </workbench>
+  </content>
+
+</package>
